@@ -1,0 +1,282 @@
+{% extends "base.html" %}
+{% block title %}{{ s['scan_code'] }} — LM Compliance System{% endblock %}
+{% block crumb %}Scan Report{% endblock %}
+{% block content %}
+{% set verdict_color = 'text-emerald-600' if s['overall_status']=='COMPLIANT' else ('text-amber-600' if s['overall_status']=='PARTIALLY COMPLIANT' else 'text-red-600') %}
+{% set ring_color = '#059669' if s['overall_status']=='COMPLIANT' else ('#d97706' if s['overall_status']=='PARTIALLY COMPLIANT' else '#dc2626') %}
+
+<!-- Header -->
+<div class="card p-5 mb-5">
+  <div class="flex flex-wrap items-center gap-5">
+    <div class="relative w-20 h-20 shrink-0">
+      <svg class="w-20 h-20 -rotate-90" viewBox="0 0 80 80">
+        <circle cx="40" cy="40" r="34" fill="none" stroke="#e2e8f0" stroke-width="7"/>
+        <circle cx="40" cy="40" r="34" fill="none" stroke="{{ ring_color }}" stroke-width="7"
+                stroke-linecap="round" stroke-dasharray="{{ (s['score']*2.136)|round|int }} 214"/>
+      </svg>
+      <div class="absolute inset-0 flex flex-col items-center justify-center">
+        <span class="text-xl font-extrabold {{ verdict_color }}">{{ s['score'] }}</span>
+        <span class="text-[9px] text-slate-400 font-semibold uppercase tracking-wide">score</span>
+      </div>
+    </div>
+    <div class="min-w-0 flex-1">
+      <div class="flex items-center gap-2 flex-wrap">
+        <h1 class="text-lg font-bold text-slate-900 tracking-tight">{{ s['product_name'] }}</h1>
+        <span class="pill {{ 'bg-emerald-50 text-emerald-700' if s['overall_status']=='COMPLIANT' else ('bg-amber-50 text-amber-700' if s['overall_status']=='PARTIALLY COMPLIANT' else 'bg-red-50 text-red-700') }}">{{ s['overall_status'] }}</span>
+      </div>
+      <div class="mt-1.5 flex items-center gap-2 flex-wrap text-[12px] text-slate-500">
+        <span class="font-mono">{{ s['scan_code'] }}</span>
+        <span class="text-slate-300">·</span>
+        <span>{{ s['category'] or '—' }}</span>
+        <span class="text-slate-300">·</span>
+        <span>{{ '📷 Package image' if s['source']=='image' else '🛒 E-commerce listing' }}</span>
+        <span class="text-slate-300">·</span>
+        <span>{{ s['created_at'] }}</span>
+      </div>
+    </div>
+    <div class="flex items-center gap-2 flex-wrap">
+      <a class="btn-primary btn-sm" href="{{ url_for('report_download', scan_id=s['id'], fmt='pdf') }}">
+        <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3"/></svg>
+        PDF
+      </a>
+      <a class="btn-secondary btn-sm" href="{{ url_for('report_download', scan_id=s['id'], fmt='docx') }}">DOCX</a>
+      <a class="btn-secondary btn-sm" href="{{ url_for('report_download', scan_id=s['id'], fmt='csv') }}">CSV</a>
+      {% if cur_user['role'] in ('admin','inspector') %}
+      <a class="btn-secondary btn-sm" href="{{ url_for('inspection_new') }}?scan={{ s['id'] }}">+ Inspection</a>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+{% if s['overall_status'] == 'NON-COMPLIANT' %}
+<div class="mb-5 px-4 py-3 rounded-xl bg-red-50 border border-red-200 text-[13px] text-red-700 leading-relaxed">
+  <b>Non-compliant package.</b> One or more mandatory declarations are missing, incorrect or not in the prescribed
+  form under the Legal Metrology (Packaged Commodities) Rules, 2011. Verify findings physically before initiating action —
+  penalty reference is included in the PDF report.
+</div>
+{% endif %}
+
+<div class="grid lg:grid-cols-5 gap-5">
+  <!-- left column: evidence + metadata -->
+  <div class="lg:col-span-2 space-y-5">
+    {% if s['source'] == 'image' and s['file_path'] %}
+    <div class="card overflow-hidden">
+      <div class="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
+        <h2 class="text-[13px] font-semibold text-slate-900">Evidence</h2>
+        <div class="flex gap-1">
+          <button type="button" data-tab="orig" class="tab-btn text-[11.5px] font-semibold px-2.5 py-1 rounded-md bg-slate-900 text-white">Original</button>
+          <button type="button" data-tab="ovl" class="tab-btn text-[11.5px] font-semibold px-2.5 py-1 rounded-md bg-slate-100 text-slate-500 hover:bg-slate-200">Annotated</button>
+        </div>
+      </div>
+      <div class="bg-slate-50">
+        <img id="evImg" class="w-full h-auto max-h-[420px] object-contain" src="{{ url_for('static', filename='../uploads/' + s['file_path'].split('/')[-1]) }}" alt="label">
+      </div>
+      <div class="px-4 py-2.5 text-[11px] text-slate-400 border-t border-slate-100">Green = detected declaration fields · orange = low-confidence text</div>
+    </div>
+    {% endif %}
+
+    <div class="card overflow-hidden">
+      <div class="px-4 py-3 border-b border-slate-100"><h2 class="text-[13px] font-semibold text-slate-900">Scan metadata</h2></div>
+      <dl class="px-4 py-3 space-y-2 text-[12.5px]">
+        <div class="flex justify-between gap-3"><dt class="text-slate-400 shrink-0">Scan code</dt><dd class="font-mono text-slate-700 text-right break-all">{{ s['scan_code'] }}</dd></div>
+        <div class="flex justify-between gap-3"><dt class="text-slate-400 shrink-0">Product</dt><dd class="text-slate-700 text-right">{{ s['product_name'] }}</dd></div>
+        <div class="flex justify-between gap-3"><dt class="text-slate-400 shrink-0">Category</dt><dd class="text-slate-700 text-right">{{ s['category'] or '—' }}</dd></div>
+        <div class="flex justify-between gap-3"><dt class="text-slate-400 shrink-0">Source</dt><dd class="text-slate-700 text-right">{{ 'Package image' if s['source']=='image' else 'E-commerce listing' }}</dd></div>
+        {% if s['source'] == 'image' %}<div class="flex justify-between gap-3"><dt class="text-slate-400 shrink-0">Capture</dt><dd class="text-right"><span class="pill {{ 'bg-amber-50 text-amber-700' if s['is_photo'] else 'bg-emerald-50 text-emerald-700' }}">{{ '📷 Photograph (no print scale)' if s['is_photo'] else '🖨️ Scan / print-resolution image' }}</span></dd></div>{% endif %}
+        {% if s['pdp_area_cm2'] %}<div class="flex justify-between gap-3"><dt class="text-slate-400 shrink-0">PDP area</dt><dd class="text-slate-700 text-right">{{ '%g cm²' % s['pdp_area_cm2'] }}</dd></div>{% endif %}
+        <div class="flex justify-between gap-3"><dt class="text-slate-400 shrink-0">OCR engine</dt><dd class="text-slate-700 text-right">Tesseract 5 (eng+hin)</dd></div>
+        <div class="flex justify-between gap-3"><dt class="text-slate-400 shrink-0">Scanned</dt><dd class="text-slate-700 text-right">{{ s['created_at'] }}</dd></div>
+        <div class="flex justify-between gap-3"><dt class="text-slate-400 shrink-0">Review</dt><dd class="text-right"><span class="pill {{ 'bg-slate-100 text-slate-500' if s['review_status']=='PENDING' else ('bg-emerald-50 text-emerald-700' if s['review_status']=='VERIFIED' else 'bg-red-50 text-red-700') }}">{{ s['review_status'] }}</span></dd></div>
+        {% if s['notes'] %}<div class="flex justify-between gap-3"><dt class="text-slate-400 shrink-0">Notes</dt><dd class="text-slate-700 text-right text-[12px]">{{ s['notes'] }}</dd></div>{% endif %}
+      </dl>
+    </div>
+
+    <div class="card overflow-hidden">
+      <div class="px-4 py-3 border-b border-slate-100"><h2 class="text-[13px] font-semibold text-slate-900">Inspector review</h2></div>
+      <div class="p-4">
+        {% if cur_user['role'] in ('admin','inspector') %}
+        <form method="post" action="{{ url_for('scan_verify', scan_id=s['id']) }}">
+          <div class="mb-3">
+            <label class="label" for="rv">Review status</label>
+            <select id="rv" class="input" name="review_status">
+              {% for v in ['PENDING','VERIFIED','QUARANTINED'] %}
+              <option {{ 'selected' if s['review_status']==v }}>{{ v }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="label" for="notes">Notes / action</label>
+            <textarea id="notes" class="input" name="notes" rows="3" placeholder="Physical verification remarks, notice issued…">{{ s['notes'] }}</textarea>
+          </div>
+          <button class="btn-primary btn-sm">Save review</button>
+        </form>
+        {% else %}
+        <p class="text-[12.5px] text-slate-400">View-only account — review actions require inspector/admin role.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- right column: declarations + checks -->
+  <div class="lg:col-span-3 space-y-5">
+    <div class="card overflow-hidden">
+      <div class="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
+        <h2 class="text-[13px] font-semibold text-slate-900">Extracted declarations</h2>
+        <span class="text-[11px] text-slate-400">{{ checks|length }} checks · {{ checks|selectattr('status','equalto','FAIL')|list|length }} violations</span>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-[12.5px]">
+          <tbody class="divide-y divide-slate-50">
+            {% set nq = (ext.get('net_qty') or [{}])[0] %}
+            {% set mf = (ext.get('mfg_date') or [{}])[0] %}
+            {% set bb = (ext.get('best_before') or [{}])[0] %}
+            {% set mr = (ext.get('mrp') or [{}])[0] %}
+            {% set cc = ext.get('consumer_care',{}) %}
+            {% set rows = [
+              ('Manufacturer / packer / importer', ext.get('address',{}).get('snippet') or None),
+              ('Country of origin', (ext.get('country',{}).get('origin') or '—') + (' <i>(imported)</i>'|safe if ext.get('country',{}).get('imported') else '')),
+              ('Common / generic name', ('detected' if ext.get('common_name',{}).get('found') else None)),
+              ('Net quantity', ((nq.get('value','—')|string) ~ ' ' ~ nq.get('unit','')) if nq else None),
+              ('Month &amp; year of manufacture', mf.get('matched') if mf else None),
+              ('Best before / use by', bb.get('matched','—') if bb else '—'),
+              ('Retail sale price (MRP)', ('Rs. %.2f'|format(mr.get('value',0)) + (' <span class="pill bg-emerald-50 text-emerald-700">incl. taxes</span>'|safe if mr.get('incl_taxes') else ' <span class="pill bg-red-50 text-red-700">tax wording missing</span>'|safe)) if mr else None),
+              ('Consumer care', ((cc.get('phones',[])+cc.get('emails',[]))[:3]|join(', ')) if (cc.get('phones') or cc.get('emails')) else None)
+            ] %}
+            {% for label, val in rows %}
+            <tr class="hover:bg-slate-50/60">
+              <td class="px-4 py-2.5 text-slate-500 font-medium w-[45%]">{{ label|safe }}</td>
+              <td class="px-4 py-2.5 text-slate-800">
+                {% if val %}{{ val|safe }}
+                {% else %}<span class="font-semibold text-red-600">Not detected</span>{% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card overflow-hidden">
+      <div class="px-4 py-3 border-b border-slate-100"><h2 class="text-[13px] font-semibold text-slate-900">Compliance checks</h2></div>
+      <div class="p-3.5 space-y-2 max-h-[560px] overflow-y-auto">
+        {% for c in checks %}
+        <div class="rounded-lg border p-3.5 {{ 'border-red-200 bg-red-50/50' if c['status']=='FAIL' else ('border-amber-200 bg-amber-50/40' if c['status']=='WARN' else ('border-emerald-200 bg-emerald-50/40' if c['status']=='PASS' else 'border-slate-200 bg-slate-50/60')) }}">
+          <div class="flex items-start justify-between gap-3">
+            <div class="text-[13px] font-semibold text-slate-800">{{ c['title'] }}</div>
+            <span class="pill shrink-0 {{ 'bg-red-100 text-red-700' if c['status']=='FAIL' else ('bg-amber-100 text-amber-700' if c['status']=='WARN' else ('bg-emerald-100 text-emerald-700' if c['status']=='PASS' else 'bg-slate-200 text-slate-600')) }}">{{ c['status'] }}</span>
+          </div>
+          <div class="mt-0.5 flex items-center gap-2 text-[11px]">
+            <span class="font-mono text-slate-400">{{ c['rule'] }}</span>
+            <span class="text-slate-300">·</span>
+            <span class="{{ 'text-red-600 font-semibold' if c['severity'] in ('CRITICAL','MAJOR') else 'text-slate-400' }}">{{ c['severity'] }}</span>
+          </div>
+          <p class="mt-1.5 text-[12.5px] text-slate-600 leading-relaxed">{{ c['message'] }}</p>
+          {% if c.get('evidence') %}<p class="mt-1 text-[11.5px] text-slate-400 italic">Evidence: {{ c['evidence'] }}</p>{% endif %}
+          {% if c.get('suggestion') %}<p class="mt-1 text-[12px] text-emerald-700">➜ {{ c['suggestion'] }}</p>{% endif %}
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    {% if s['source'] == 'image' %}
+    <div class="card overflow-hidden">
+      <div class="px-4 py-3 border-b border-slate-100">
+        <h2 class="text-[13px] font-semibold text-slate-900">Font size &amp; readability — Rule 7 (Table-I)</h2>
+        {% if s['pdp_area_cm2'] %}
+        <p class="text-[11.5px] text-slate-400 mt-0.5">PDP {{ '%g'|format(s['pdp_area_cm2']) }} cm² → minimum height <b class="text-slate-600">{{ req }} mm</b> (normal printing)</p>
+        {% endif %}
+      </div>
+      {% if s['is_photo'] %}
+      <div class="mx-4 mt-3 px-3.5 py-2.5 rounded-lg bg-amber-50 border border-amber-200 text-[12px] text-amber-700 leading-relaxed">
+        <b>Photograph detected</b> — the image has no print-resolution metadata, so physical font sizes
+        cannot be verified. Values below are <b>estimates only</b> (assumed 300 dpi). For a definitive
+        Table-I check, photograph the label flat with a scale reference or use a scanner.
+      </div>
+      {% endif %}
+      <div class="overflow-x-auto">
+        <table class="w-full text-[12.5px]">
+          <thead>
+            <tr class="text-left text-[11px] uppercase tracking-wider text-slate-400 border-b border-slate-100 bg-slate-50/60">
+              <th class="px-4 py-2 font-semibold">Field</th>
+              <th class="px-4 py-2 font-semibold">Measured</th>
+              {% if not s['is_photo'] %}<th class="px-4 py-2 font-semibold">Required</th>{% endif %}
+              <th class="px-4 py-2 font-semibold">W:H</th>
+              <th class="px-4 py-2 font-semibold">OCR</th>
+              {% if not s['is_photo'] %}<th class="px-4 py-2 font-semibold">Verdict</th>{% endif %}
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-50">
+            {% for k, f in fields.items() %}
+            <tr class="hover:bg-slate-50/60">
+              <td class="px-4 py-2.5 text-slate-600">{{ f['label'] }}</td>
+              <td class="px-4 py-2.5 font-bold text-slate-800">{{ '%.2f'|format(f['height_mm']) }} mm <span class="text-[10px] text-slate-400 font-normal">(est.)</span></td>
+              {% if not s['is_photo'] %}<td class="px-4 py-2.5 text-slate-500">{{ '%.1f'|format(req) }} mm</td>{% endif %}
+              <td class="px-4 py-2.5 text-slate-500">{{ '%.2f'|format(f['width_mm_avg']/f['height_mm']) if f['height_mm'] else '—' }}</td>
+              <td class="px-4 py-2.5 text-slate-500">{{ f['conf'] }}%</td>
+              {% if not s['is_photo'] %}<td class="px-4 py-2.5">{% if f['height_mm'] >= req - 0.15 %}<span class="pill bg-emerald-50 text-emerald-700">OK</span>{% else %}<span class="pill bg-red-50 text-red-700">Too small</span>{% endif %}</td>{% endif %}
+            </tr>
+            {% else %}
+            <tr><td colspan="6" class="px-4 py-6 text-center text-[12.5px] text-slate-400">No declaration fields measurable from this image.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    {% endif %}
+
+    <div class="grid md:grid-cols-2 gap-5">
+      <div class="card overflow-hidden">
+        <div class="px-4 py-3 border-b border-slate-100"><h2 class="text-[13px] font-semibold text-slate-900">Linked inspections</h2></div>
+        <div class="p-4">
+          {% if insp %}
+          <div class="space-y-2">
+            {% for i in insp %}
+            <div class="flex items-center justify-between gap-2 rounded-lg border border-slate-200 px-3 py-2">
+              <div class="min-w-0">
+                <div class="text-[12.5px] font-semibold text-slate-700 truncate">{{ i['title'] }}</div>
+                <div class="text-[11px] text-slate-400">{{ i['notice_ref'] or 'no notice ref' }} · {{ i['created_at'] }}</div>
+              </div>
+              <span class="pill {{ 'bg-blue-50 text-blue-700' if i['status']=='OPEN' else ('bg-amber-50 text-amber-700' if i['status']=='NOTICE ISSUED' else 'bg-emerald-50 text-emerald-700') }}">{{ i['status'] }}</span>
+            </div>
+            {% endfor %}
+          </div>
+          {% else %}<p class="text-[12.5px] text-slate-400">No inspections linked to this scan yet.</p>{% endif %}
+        </div>
+      </div>
+      <div class="card overflow-hidden">
+        <div class="px-4 py-3 border-b border-slate-100"><h2 class="text-[13px] font-semibold text-slate-900">Generated reports</h2></div>
+        <div class="p-4">
+          {% if reports_ %}
+          <div class="space-y-2">
+            {% for r in reports_ %}
+            <div class="flex items-center gap-2.5 text-[12.5px]">
+              <span class="pill bg-slate-100 text-slate-600 font-mono">{{ r['fmt']|upper }}</span>
+              <span class="text-slate-500 font-mono text-[11.5px] truncate">{{ r['file_path'].split('/')[-1] }}</span>
+            </div>
+            {% endfor %}
+          </div>
+          {% else %}<p class="text-[12.5px] text-slate-400">Use the PDF / DOCX / CSV buttons above.</p>{% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+(function () {
+  var tabs = document.querySelectorAll('.tab-btn');
+  var img = document.getElementById('evImg');
+  if (!img) return;
+  var orig = img.src;
+  var ovl = '{{ url_for("scan_overlay", scan_id=s["id"]) if s["source"]=="image" else "" }}';
+  tabs.forEach(function (b) {
+    b.addEventListener('click', function () {
+      tabs.forEach(function (x) { x.classList.remove('bg-slate-900','text-white'); x.classList.add('bg-slate-100','text-slate-500'); });
+      b.classList.add('bg-slate-900','text-white'); b.classList.remove('bg-slate-100','text-slate-500');
+      img.src = b.dataset.tab === 'ovl' && ovl ? ovl : orig;
+    });
+  });
+})();
+</script>
+{% endblock %}

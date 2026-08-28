@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sign in — LM Compliance System</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='fonts/fonts.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/ui.css') }}">
+</head>
+<body class="min-h-screen bg-slate-900 flex items-center justify-center px-4"
+      style="background-image: radial-gradient(1200px 600px at 15% -10%, rgba(27,102,223,.35), transparent 60%),
+             radial-gradient(900px 500px at 90% 110%, rgba(16,185,129,.18), transparent 55%);">
+<div class="w-full max-w-[400px]">
+  <div class="text-center mb-7">
+    <div class="w-12 h-12 rounded-2xl bg-brand-600 text-white flex items-center justify-center mx-auto shadow-lg shadow-blue-900/50">
+      <svg style="width:24px;height:24px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 3 7v10l9 5 9-5V7l-9-5z"/><path d="m3 7 9 5 9-5"/><path d="M12 12v10"/></svg>
+    </div>
+    <h1 class="mt-4 text-[22px] font-bold text-white tracking-tight">LM Compliance System</h1>
+    <p class="mt-1 text-[13px] text-slate-400">Legal Metrology (Packaged Commodities) Rules, 2011<br>Automated label &amp; listing compliance scanner</p>
+  </div>
+
+  <div class="bg-white rounded-2xl shadow-2xl shadow-black/40 p-7">
+    <div id="err" class="hidden mb-4 px-3.5 py-2.5 rounded-lg bg-red-50 border border-red-200 text-[13px] font-medium text-red-700"></div>
+    <form id="loginForm" novalidate>
+      <div class="mb-4">
+        <label class="label" for="username">Username</label>
+        <input id="username" class="input" type="text" autocomplete="username" placeholder="e.g. admin" required autofocus>
+      </div>
+      <div class="mb-5">
+        <label class="label" for="password">Password</label>
+        <input id="password" class="input" type="password" autocomplete="current-password" placeholder="••••••••" required>
+      </div>
+      <button id="submitBtn" type="submit"
+        class="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-sm font-semibold py-2.5 transition shadow-sm shadow-blue-900/30 focus:outline-none focus:ring-2 focus:ring-blue-500/40 cursor-pointer">
+        Sign in
+      </button>
+    </form>
+    <div class="mt-5 pt-4 border-t border-slate-100">
+      <div class="text-[11px] font-semibold text-slate-400 uppercase tracking-wide mb-2">Demo accounts</div>
+      <div class="grid grid-cols-1 gap-1.5 text-[12px]">
+        {% set demos = [('admin', 'admin123', 'Administrator'), ('inspector', 'inspector123', 'Inspector'), ('viewer', 'viewer123', 'Viewer')] %}
+        {% for u, p, r in demos %}
+        <button type="button" data-u="{{ u }}" data-p="{{ p }}"
+          class="flex items-center justify-between px-3 py-1.5 rounded-lg border border-slate-200 hover:border-brand-400 hover:bg-brand-50/50 transition text-slate-600 hover:text-slate-900 text-left cursor-pointer">
+          <span><b class="text-slate-800 font-semibold">{{ u }}</b> · {{ r }}</span>
+          <span class="text-[11px] text-slate-400 font-mono">{{ p }}</span>
+        </button>
+        {% endfor %}
+      </div>
+      <p class="mt-3 text-[11px] text-slate-400 leading-relaxed">Click an account to fill the form, then press Sign in.</p>
+    </div>
+  </div>
+  <p class="mt-6 text-center text-[11.5px] text-slate-500">Dept. of Consumer Affairs · Legal Metrology Division</p>
+</div>
+
+<script>
+(function () {
+  var form = document.getElementById('loginForm');
+  var err = document.getElementById('err');
+  var btn = document.getElementById('submitBtn');
+  var next = new URLSearchParams(location.search).get('next') || '/';
+
+  document.querySelectorAll('[data-u]').forEach(function (b) {
+    b.addEventListener('click', function () {
+      document.getElementById('username').value = b.dataset.u;
+      document.getElementById('password').value = b.dataset.p;
+      document.getElementById('username').focus();
+    });
+  });
+
+  form.addEventListener('submit', function (ev) {
+    ev.preventDefault();
+    err.classList.add('hidden');
+    btn.disabled = true;
+    btn.textContent = 'Signing in…';
+    fetch('{{ url_for("api_login") }}', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'fetch' },
+      body: JSON.stringify({
+        username: document.getElementById('username').value.trim(),
+        password: document.getElementById('password').value
+      })
+    }).then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); })
+      .then(function (res) {
+        if (res.ok && res.d.ok) {
+          try { localStorage.setItem('lm_token', res.d.token); } catch (e) {}
+          var sep = next.indexOf('?') === -1 ? '?' : '&';
+          window.location.href = next + sep + 'token=' + encodeURIComponent(res.d.token);
+        } else {
+          showErr(res.d.error || 'Invalid credentials.');
+        }
+      })
+      .catch(function () { showErr('Network error — please retry.'); })
+      .finally(function () { btn.disabled = false; btn.textContent = 'Sign in'; });
+  });
+
+  function showErr(msg) {
+    err.textContent = msg;
+    err.classList.remove('hidden');
+  }
+})();
+</script>
+</body>
+</html>

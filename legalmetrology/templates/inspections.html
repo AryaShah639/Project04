@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}Inspections — LM Compliance System{% endblock %}
+{% block crumb %}Inspections{% endblock %}
+{% block content %}
+<div class="flex items-start justify-between flex-wrap gap-3 mb-5">
+  <div>
+    <h1 class="text-xl font-bold text-slate-900 tracking-tight">Inspections &amp; enforcement</h1>
+    <p class="text-[13px] text-slate-500 mt-0.5">Enforcement actions initiated from scan findings.</p>
+  </div>
+  {% if cur_user['role'] in ('admin','inspector') %}
+  <a href="{{ url_for('inspection_new') }}" class="btn-primary">
+    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 4.5v15m7.5-7.5h-15"/></svg>
+    New inspection
+  </a>
+  {% endif %}
+</div>
+<div class="card overflow-hidden">
+  <div class="overflow-x-auto">
+    <table class="w-full text-[13px]">
+      <thead>
+        <tr class="text-left text-[11px] uppercase tracking-wider text-slate-400 border-b border-slate-100 bg-slate-50/60">
+          <th class="px-4 py-2.5 font-semibold">Title</th>
+          <th class="px-4 py-2.5 font-semibold">Scan</th>
+          <th class="px-4 py-2.5 font-semibold">Location</th>
+          <th class="px-4 py-2.5 font-semibold">Inspector</th>
+          <th class="px-4 py-2.5 font-semibold">Status</th>
+          <th class="px-4 py-2.5 font-semibold">Notice ref</th>
+          <th class="px-4 py-2.5 font-semibold">Date</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-slate-50">
+        {% for r in rows %}
+        <tr class="hover:bg-slate-50/70 transition">
+          <td class="px-4 py-3">
+            <div class="font-semibold text-slate-800">{{ r['title'] }}</div>
+            {% if r['findings'] %}<div class="text-[11.5px] text-slate-400 mt-0.5 max-w-[260px] truncate">{{ r['findings'] }}</div>{% endif %}
+          </td>
+          <td class="px-4 py-3">
+            <a class="font-mono text-[11.5px] text-brand-600 hover:underline" href="{{ url_for('scan_detail', scan_id=r['scan_id']) }}">{{ r['scan_code'] }}</a>
+            <div class="text-[11.5px] text-slate-400">{{ r['product_name'] }}</div>
+          </td>
+          <td class="px-4 py-3 text-slate-500 text-[12.5px]">{{ r['location'] or '—' }}</td>
+          <td class="px-4 py-3 text-slate-500 text-[12.5px]">{{ r['inspector'] or '—' }}</td>
+          <td class="px-4 py-3">
+            {% if cur_user['role'] in ('admin','inspector') %}
+            <form method="post" action="{{ url_for('inspection_status', iid=r['id']) }}">
+              <select name="status" onchange="this.form.submit()" class="text-[12px] rounded-lg border border-slate-300 bg-white px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500/40">
+                {% for v in ['OPEN','NOTICE ISSUED','RESOLVED','CLOSED'] %}
+                <option {{ 'selected' if r['status']==v }}>{{ v }}</option>
+                {% endfor %}
+              </select>
+            </form>
+            {% else %}<span class="pill {{ 'bg-blue-50 text-blue-700' if r['status']=='OPEN' else ('bg-amber-50 text-amber-700' if r['status']=='NOTICE ISSUED' else ('bg-emerald-50 text-emerald-700' if r['status']=='RESOLVED' else 'bg-slate-100 text-slate-500')) }}">{{ r['status'] }}</span>{% endif %}
+          </td>
+          <td class="px-4 py-3 text-[12px] text-slate-500 font-mono">{{ r['notice_ref'] or '—' }}</td>
+          <td class="px-4 py-3 text-slate-400 text-[12px]">{{ r['created_at'] }}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="7" class="px-4 py-10 text-center text-[13px] text-slate-400">No inspections recorded.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

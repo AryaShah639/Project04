@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}New Inspection — LM Compliance System{% endblock %}
+{% block crumb %}Inspections → New{% endblock %}
+{% block content %}
+<div class="mb-5">
+  <h1 class="text-xl font-bold text-slate-900 tracking-tight">Record an inspection</h1>
+  <p class="text-[13px] text-slate-500 mt-0.5">Link an inspection / enforcement action to a scan.</p>
+</div>
+<div class="card max-w-2xl p-5">
+  <form method="post">
+    <div class="mb-4">
+      <label class="label" for="scan_id">Linked scan <span class="text-red-500">*</span></label>
+      <select id="scan_id" class="input" name="scan_id" required>
+        <option value="">— select scan —</option>
+        {% for s in scans_ %}
+        <option value="{{ s['id'] }}" {{ 'selected' if request.args.get('scan')|int == s['id'] }}>
+          {{ s['scan_code'] }} · {{ s['product_name'] }} ({{ s['overall_status'] }})</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="mb-4">
+      <label class="label" for="title">Inspection title <span class="text-red-500">*</span></label>
+      <input id="title" class="input" type="text" name="title" required placeholder="e.g. Market surveillance — retail store">
+    </div>
+    <div class="grid md:grid-cols-2 gap-4">
+      <div class="mb-1">
+        <label class="label" for="loc">Location</label>
+        <input id="loc" class="input" type="text" name="location" placeholder="Store / premises address">
+      </div>
+      <div class="mb-1">
+        <label class="label" for="insp">Inspector</label>
+        <input id="insp" class="input" type="text" name="inspector" value="{{ cur_user['full_name'] }}">
+      </div>
+    </div>
+    <div class="my-4">
+      <label class="label" for="findings">Findings</label>
+      <textarea id="findings" class="input" name="findings" rows="3" placeholder="Summary of physical findings…"></textarea>
+    </div>
+    <div class="mb-4">
+      <label class="label" for="action">Action taken</label>
+      <textarea id="action" class="input" name="action_taken" rows="3" placeholder="e.g. Notice issued, stock quarantined…"></textarea>
+    </div>
+    <div class="grid md:grid-cols-2 gap-4 mb-5">
+      <div>
+        <label class="label" for="notice">Notice reference</label>
+        <input id="notice" class="input" type="text" name="notice_ref" placeholder="e.g. LM/Notice/2026/0142">
+      </div>
+      <div>
+        <label class="label" for="st">Status</label>
+        <select id="st" class="input" name="status">
+          <option>OPEN</option><option>NOTICE ISSUED</option><option>RESOLVED</option><option>CLOSED</option>
+        </select>
+      </div>
+    </div>
+    <button class="btn-primary">Save inspection</button>
+  </form>
+</div>
+{% endblock %}

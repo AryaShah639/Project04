@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}Products — LM Compliance System{% endblock %}
+{% block crumb %}Products{% endblock %}
+{% block content %}
+<div class="mb-5">
+  <h1 class="text-xl font-bold text-slate-900 tracking-tight">Product repository</h1>
+  <p class="text-[13px] text-slate-500 mt-0.5">Products with their compliance history across all scans.</p>
+</div>
+<div class="card overflow-hidden">
+  <div class="overflow-x-auto">
+    <table class="w-full text-[13px]">
+      <thead>
+        <tr class="text-left text-[11px] uppercase tracking-wider text-slate-400 border-b border-slate-100 bg-slate-50/60">
+          <th class="px-4 py-2.5 font-semibold">#</th>
+          <th class="px-4 py-2.5 font-semibold">Product</th>
+          <th class="px-4 py-2.5 font-semibold">Brand</th>
+          <th class="px-4 py-2.5 font-semibold">Manufacturer</th>
+          <th class="px-4 py-2.5 font-semibold">Category</th>
+          <th class="px-4 py-2.5 font-semibold">Scans</th>
+          <th class="px-4 py-2.5 font-semibold">Compliant</th>
+          <th class="px-4 py-2.5"></th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-slate-50">
+        {% for p in rows %}
+        <tr class="hover:bg-slate-50/70 transition">
+          <td class="px-4 py-3 text-slate-400">{{ p['id'] }}</td>
+          <td class="px-4 py-3 font-semibold text-slate-800">{{ p['name'] }}</td>
+          <td class="px-4 py-3 text-slate-600">{{ p['brand'] or '—' }}</td>
+          <td class="px-4 py-3 text-slate-500 text-[12.5px]">{{ p['manufacturer'] or '—' }}</td>
+          <td class="px-4 py-3"><span class="px-2 py-0.5 rounded-md bg-slate-100 text-slate-500 text-[11px] font-medium">{{ p['category'] or '—' }}</span></td>
+          <td class="px-4 py-3 font-bold text-slate-800">{{ p['scans'] or 0 }}</td>
+          <td class="px-4 py-3"><span class="font-bold {{ 'text-emerald-600' if p['ok'] else 'text-slate-300' }}">{{ p['ok'] or 0 }}</span></td>
+          <td class="px-4 py-3 text-right"><a class="btn-secondary btn-sm" href="{{ url_for('product_detail', pid=p['id']) }}">History</a></td>
+        </tr>
+        {% else %}
+        <tr><td colspan="8" class="px-4 py-10 text-center text-[13px] text-slate-400">No products registered.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
