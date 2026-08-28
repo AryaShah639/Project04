@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+{% block title %}Rules Reference — LM Compliance System{% endblock %}
+{% block crumb %}Rules Reference{% endblock %}
+{% block content %}
+<div class="mb-5">
+  <h1 class="text-xl font-bold text-slate-900 tracking-tight">Legal Metrology (Packaged Commodities) Rules, 2011</h1>
+  <p class="text-[13px] text-slate-500 mt-0.5">Every check implemented in this system, with its legal basis
+  (as amended — incl. GSR 629(E) dt. 23-06-2017, effective 01-01-2018).</p>
+</div>
+
+<div class="card overflow-hidden mb-5">
+  <div class="px-5 py-4 border-b border-slate-100"><h2 class="text-[14px] font-semibold text-slate-900">Mandatory declarations — Rule 6</h2></div>
+  <div class="overflow-x-auto">
+    <table class="w-full text-[13px]">
+      <thead>
+        <tr class="text-left text-[11px] uppercase tracking-wider text-slate-400 border-b border-slate-100 bg-slate-50/60">
+          <th class="px-4 py-2.5 font-semibold">Declaration</th>
+          <th class="px-4 py-2.5 font-semibold">Provision</th>
+          <th class="px-4 py-2.5 font-semibold">Severity</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-slate-50">
+        {% set rules6 = [
+          ('Name &amp; address of manufacturer / packer / importer (complete address, PIN)', 'R6(1)(a), R10', 'CRITICAL'),
+          ('Country of origin / manufacture / assembly — imported products', 'R6(1)(aa)', 'CRITICAL'),
+          ('Common or generic name of the commodity', 'R6(1)(b)', 'CRITICAL'),
+          ('Net quantity in standard units or number; SI symbols; no dozen/score/gross', 'R6(1)(c), R8(5), R8(4)', 'CRITICAL'),
+          ('Month &amp; year of manufacture / pre-packing / import', 'R6(1)(d)', 'CRITICAL'),
+          ('Best before / use-by date (perishables); expiry checked', 'R6(1)(da)', 'MAJOR'),
+          ('Retail sale price — MRP incl. of all taxes; single MRP; rounding', 'R6(1)(e), R2(m)', 'CRITICAL'),
+          ('Dimensions of commodity where sizes are relevant', 'R6(1)(f)', 'INFO'),
+          ('Consumer care — name, address, phone, e-mail for complaints', 'R6(2)', 'CRITICAL')] %}
+        {% for a, b, c in rules6 %}
+        <tr class="hover:bg-slate-50/60">
+          <td class="px-4 py-2.5 text-slate-700">{{ a|safe }}</td>
+          <td class="px-4 py-2.5 font-mono text-[11.5px] text-slate-500">{{ b }}</td>
+          <td class="px-4 py-2.5"><span class="pill {{ 'bg-red-50 text-red-700' if c=='CRITICAL' else ('bg-amber-50 text-amber-700' if c=='MAJOR' else 'bg-slate-100 text-slate-500') }}">{{ c }}</span></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="grid lg:grid-cols-2 gap-5">
+  <div class="card overflow-hidden">
+    <div class="px-5 py-4 border-b border-slate-100"><h2 class="text-[14px] font-semibold text-slate-900">Font sizes — Rule 7, Table-I</h2></div>
+    <div class="p-5">
+      <table class="w-full text-[12.5px]">
+        <thead>
+          <tr class="text-left text-[11px] uppercase tracking-wider text-slate-400 border-b border-slate-100">
+            <th class="py-2 font-semibold">PDP area (A)</th>
+            <th class="py-2 font-semibold">Normal</th>
+            <th class="py-2 font-semibold">Blown/molded</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-50">
+          {% set table1 = [('A ≤ 50 cm²','1.0 mm','1.5 mm'),('50 < A ≤ 100 cm²','1.5 mm','3.0 mm'),('100 < A ≤ 500 cm²','2.5 mm','4.0 mm'),('500 < A ≤ 2500 cm²','4.0 mm','6.0 mm'),('A > 2500 cm²','6.0 mm','6.0 mm')] %}
+          {% for a, n, b in table1 %}
+          <tr><td class="py-2 text-slate-700">{{ a }}</td><td class="py-2 font-bold text-slate-800">{{ n }}</td><td class="py-2 text-slate-600">{{ b }}</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      <p class="mt-3 text-[11.5px] text-slate-400 leading-relaxed">R7(3): letter/numeral width ≥ ⅓ of height (except “1”, i, I, l).<br>
+      R7(4): PDP = H×W (rectangular) · 40% of H×circumference (cylindrical) · 40% of total surface (other).</p>
+    </div>
+  </div>
+  <div class="card overflow-hidden">
+    <div class="px-5 py-4 border-b border-slate-100"><h2 class="text-[14px] font-semibold text-slate-900">Placement, manner &amp; markings</h2></div>
+    <div class="p-5 space-y-2.5 text-[12.5px]">
+      {% set misc = [
+        ('Declarations on the principal display panel', 'R8(1)'),
+        ('Clear space around quantity declaration (1× height above/below, 2× left/right)', 'R8(1) proviso'),
+        ('Legible &amp; prominent; MRP &amp; net qty in contrasting colour', 'R9(1)'),
+        ('Declarations in English or Hindi (Devanagari)', 'R9(4)'),
+        ('No stickers altering declarations; only lower-MRP sticker, not covering MRP', 'R6(3)'),
+        ('Veg (green) / non-veg (red/brown) dot — soaps, cosmetics, toiletries', 'R6(8)'),
+        ('“GM” at top of PDP for genetically modified foods', 'R6(7)'),
+        ('E-commerce listings display declarations (except mfg month/year)', 'R6(10)'),
+        ('Standard pack sizes for Second Schedule commodities', 'R5')] %}
+      {% for a, b in misc %}
+      <div class="flex items-start gap-2">
+        <span class="mt-1.5 w-1.5 h-1.5 rounded-full bg-brand-500 shrink-0"></span>
+        <span class="text-slate-600">{{ a|safe }} <span class="text-slate-400 font-mono text-[11px]">[{{ b }}]</span></span>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<div class="card mt-5 overflow-hidden">
+  <div class="px-5 py-4 border-b border-slate-100"><h2 class="text-[14px] font-semibold text-slate-900">Penalty reference — Legal Metrology Act, 2009</h2></div>
+  <div class="overflow-x-auto">
+    <table class="w-full text-[13px]">
+      <thead>
+        <tr class="text-left text-[11px] uppercase tracking-wider text-slate-400 border-b border-slate-100 bg-slate-50/60">
+          <th class="px-4 py-2.5 font-semibold">Provision</th>
+          <th class="px-4 py-2.5 font-semibold">Offence</th>
+          <th class="px-4 py-2.5 font-semibold">Penalty</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-slate-50">
+        {% set penalties = [
+          ('Sec. 35', 'Contravention of s.18 (declarations on pre-packaged commodities)', 'Fine up to ₹25,000 (1st); ₹50,000 (2nd); ₹1,00,000 (3rd &amp; subsequent)'),
+          ('Sec. 36(1)', 'Manufacturing/packing/selling non-standard packages', 'Fine up to ₹25,000 (1st); ₹50,000 (2nd); ₹50,000–₹1,00,000 or imprisonment up to 1 yr or both (subsequent)'),
+          ('Sec. 36(2)', 'Error in net quantity of pre-packed commodity', 'Fine ₹10,000–₹50,000 (1st); up to ₹1,00,000 or imprisonment up to 1 yr or both (2nd &amp; subsequent)'),
+          ('Sec. 39', 'General contravention of rules', 'Fine up to ₹25,000 (1st); ₹50,000 (2nd); ₹1,00,000 (3rd &amp; subsequent)')] %}
+        {% for a, b, c in penalties %}
+        <tr class="hover:bg-slate-50/60">
+          <td class="px-4 py-2.5 font-semibold text-slate-800">{{ a }}</td>
+          <td class="px-4 py-2.5 text-slate-600">{{ b }}</td>
+          <td class="px-4 py-2.5 text-slate-600">{{ c|safe }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <div class="px-5 py-3 border-t border-slate-100 text-[11px] text-slate-400">
+    Source: Legal Metrology Act, 2009 (1 of 2010); Legal Metrology (Packaged Commodities) Rules, 2011 with
+    amendments — GSR 784(E)/2011, 832(E)/2011, 318(E)/2011, 427(E)/2012, 137(E)/2014, 385(E)/2015,
+    838(E)/2016, 858(E)/2016, 629(E)/2017.
+  </div>
+</div>
+{% endblock %}
