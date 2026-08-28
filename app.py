@@ -1,7 +1,11 @@
 """LM Compliance System — Legal Metrology (Packaged Commodities) Rules, 2011 compliance checker."""
-import os, json, uuid, secrets
+import os, sys, json, uuid, secrets
 from datetime import datetime
 from functools import wraps
+# make sure the project root is importable no matter how the app is launched
+# (gunicorn, systemd, docker: `python app.py` sets this automatically, other
+#  entrypoints may not)
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from werkzeug.security import check_password_hash, generate_password_hash
 from werkzeug.utils import secure_filename
 from flask import (Flask, request, redirect, url_for, session, render_template,

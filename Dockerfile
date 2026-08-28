@@ -2,11 +2,14 @@
 FROM python:3.12-slim
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1
+    PYTHONUNBUFFERED=1 \
+    PYTHONPATH=/app
 
-# OCR engine: English + Hindi traineddata, plus DejaVu fonts (needed by reportlab PDFs)
+# OCR engine: English + Hindi traineddata, plus DejaVu fonts (needed by reportlab PDFs).
+# libgl1/libglib2.0-0: insurance for any GL-dependent package (headless cv2 doesn't need it).
 RUN apt-get update && apt-get install -y --no-install-recommends \
         tesseract-ocr tesseract-ocr-eng tesseract-ocr-hin fonts-dejavu \
+        libgl1 libglib2.0-0 \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app

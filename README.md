@@ -64,6 +64,21 @@ Notes:
 - Port is read from the `PORT` environment variable (default 5000).
 - Demo accounts after boot: `admin/admin123`, `inspector/inspector123`, `viewer/viewer123`.
 
+### Deploy troubleshooting
+
+`ModuleNotFoundError: No module named 'core'` in the Render logs almost always means the
+**pushed repo is missing the `core/` folder** (an incomplete local copy). Verify:
+
+```bash
+git ls-files | grep '^core/'     # must list core/__init__.py, core/db.py, core/ocr.py, …
+```
+
+If it prints nothing: `git add core/` (if the folder exists locally) → commit → push.
+Render auto-redeploys on push. If `core/` is also missing locally, re-download the
+complete project from the workspace and replace your local copy, then re-push.
+The Dockerfile also sets `PYTHONPATH=/app` and `app.py` inserts its own directory into
+`sys.path`, so a complete repo builds and boots regardless of working directory.
+
 # Running with VS Code + a virtual environment
 
 A venv solves the two-Python problem permanently: it pins the exact interpreter and
